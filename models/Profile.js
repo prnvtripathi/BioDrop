@@ -12,6 +12,17 @@ const ProfileSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Account",
     },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    pronoun: {
+      type: String,
+      enum: {
+        values: config.pronouns.map((pronoun) => pronoun.value),
+        message: "{VALUE} is not a supported profile layout",
+      },
+    },
     source: {
       type: String,
       required: true,
@@ -30,6 +41,10 @@ const ProfileSchema = new Schema(
     isEnabled: {
       type: Boolean,
       default: true,
+    },
+    isShadowBanned: {
+      type: Boolean,
+      default: false,
     },
     isStatsPublic: {
       type: Boolean,
@@ -120,8 +135,18 @@ const ProfileSchema = new Schema(
       type: [EventSchema],
       default: [],
     },
+    settings: {
+      hideNavbar: {
+        type: Boolean,
+        default: false,
+      },
+      hideFooter: {
+        type: Boolean,
+        default: false,
+      },
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports =

@@ -11,18 +11,17 @@ import Input from "@components/form/Input";
 import { getTags } from "./api/discover/tags";
 import { getProfiles } from "./api/profiles";
 import Pagination from "@components/Pagination";
-import { PROJECT_NAME } from "@constants/index";
-
 import {
   cleanSearchInput,
   searchTagNameInInput,
 } from "@services/utils/search/tags";
+import { PROJECT_NAME } from "@constants/index";
 
 async function fetchUsersByKeyword(keyword) {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/api/search?${new URLSearchParams({
       slug: keyword,
-    }).toString()}`
+    }).toString()}`,
   );
 
   const searchData = await res.json();
@@ -79,10 +78,12 @@ export default function Search({
   BASE_URL,
 }) {
   const router = useRouter();
-  const { username, keyword } = router.query;
+  const { username, keyword, userSearchParam } = router.query;
   const [notFound, setNotFound] = useState();
   const [users, setUsers] = useState(keyword ? filteredUsers : randUsers);
-  const [inputValue, setInputValue] = useState(username || keyword || "");
+  const [inputValue, setInputValue] = useState(
+    username || keyword || userSearchParam || "",
+  );
   const [currentPage, setCurrentPage] = useState(1);
 
   const searchInputRef = useRef(null);
@@ -92,6 +93,11 @@ export default function Search({
       setNotFound(`${username} not found`);
     }
   }, [username]);
+  useEffect(() => {
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, []);
 
   useEffect(() => {
     if (!inputValue) {
@@ -99,10 +105,13 @@ export default function Search({
       setUsers(randUsers);
       //Removing the not found field when the input field is empty
       setNotFound();
-      return;
-    }
-
-    if (inputValue.length < 2) {
+      router.replace(
+        {
+          pathname: "/search",
+        },
+        undefined,
+        { shallow: true },
+      );
       return;
     }
 
@@ -119,7 +128,7 @@ export default function Search({
         const res = await fetch(
           `${BASE_URL}/api/search?${new URLSearchParams({
             slug: value,
-          }).toString()}`
+          }).toString()}`,
         );
         const data = await res.json();
         if (data.error) {
@@ -136,6 +145,14 @@ export default function Search({
     }
 
     const timer = setTimeout(() => {
+      router.replace(
+        {
+          pathname: "/search",
+          query: { userSearchParam: inputValue },
+        },
+        undefined,
+        { shallow: true },
+      );
       fetchUsers(inputValue);
     }, 500);
 
@@ -168,7 +185,7 @@ export default function Search({
     if (cleanedInput.length) {
       if (searchTagNameInInput(inputValue, keyword)) {
         return setInputValue(
-          items.filter((item) => item.trim() !== keyword).join(", ")
+          items.filter((item) => item.trim() !== keyword).join(", "),
         );
       }
 
@@ -178,7 +195,7 @@ export default function Search({
     setInputValue(keyword);
   };
 
-  const usersPerPage = 20;
+  const usersPerPage = 21;
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const visibleUsers = users.slice(indexOfFirstUser, indexOfLastUser);
@@ -195,9 +212,9 @@ export default function Search({
         description={`Search ${PROJECT_NAME} user directory by name, tags, skills, languages`}
       />
       <Page>
-        <h1 className="text-4xl mb-4 font-bold">Search</h1>
+        <h1 className="mb-4 text-4xl font-bold">Search</h1>
 
-        <div className="flex flex-wrap justify-center space-x-3 mb-4">
+        <div className="flex flex-wrap justify-center mb-4 space-x-3">
           {tags &&
             tags
               .slice(0, 10)
